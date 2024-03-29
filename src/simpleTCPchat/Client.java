@@ -1,3 +1,4 @@
+package simpleTCPchat;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -29,13 +30,13 @@ public class Client implements Runnable {
 		} catch (IOException e) {
 			shutdown();
 		}
-	
+	}
 	public void shutdown() {
 		done = true;
 		try {
-			in.close();
-			out.close();
-			if (!client.isClosed()) {
+			if (in != null) in.close();
+			if (out != null) out.close();
+			if (client != null && !client.isClosed()) {
 				client.close();
 			}
 		} catch (IOException e) {
@@ -43,19 +44,17 @@ public class Client implements Runnable {
 		}
 	}	
 		
-	}
 	
 	class InputHandler implements Runnable {
 
 		@Override
 		public void run() {
-			try {
-				BufferedReader inReader = new BufferedReader(new InputStreamReader(System.in)); // input from command line
-				while (!done) {
-					String message = inReader.readLine();
-					if (message.equals("/quit") ) {
-						inReader.close();
+			try (BufferedReader inReader = new BufferedReader(new InputStreamReader(System.in))) {
+				String message; 
+				while (!done && (message =inReader.readLine()) != null) {
+					if (message.equals("/quit")) {
 						shutdown();
+						break; // exits the loops after shutdown, handles exception
 					} else {
 						out.println(message);
 					}
@@ -69,7 +68,7 @@ public class Client implements Runnable {
 	}
 	
 	public static void main(String[] args) {
-		Client client = new Client();
-		client.run();
+		new Thread(new Client()).start(); // correctly starts the client in a new thread
 	}
 }
+
